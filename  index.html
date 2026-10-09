@@ -1,0 +1,435 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>X-O Arena | Tic Tac Toe</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+:root {
+  --bg: #0b1020;
+  --panel: #151d32;
+  --line: #293550;
+  --blue: #6c8cff;
+  --pink: #ff719a;
+  --text: #f4f6ff;
+  --muted: #98a5c5;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  font-family: Inter, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(ellipse at top, #1b2850 0%, transparent 55%),
+    var(--bg);
+}
+
+.app { width: 100%; max-width: 440px; }
+
+header { text-align: center; margin-bottom: 25px; }
+
+.logo {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: var(--blue);
+}
+
+h1 {
+  margin: 12px 0 8px;
+  font-size: clamp(34px, 9vw, 48px);
+  letter-spacing: -2px;
+}
+
+h1 span { color: var(--pink); }
+
+.subtitle { color: var(--muted); font-size: 14px; }
+
+.panel {
+  background: rgba(21, 29, 50, .95);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow: 0 20px 60px #0005;
+}
+
+.modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+button { font: inherit; cursor: pointer; }
+
+.mode, .action {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 8px;
+  color: var(--muted);
+  background: #10172a;
+  transition: .2s;
+}
+
+.mode.active {
+  color: white;
+  background: #293b70;
+  border-color: var(--blue);
+}
+
+.scoreboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  margin-bottom: 22px;
+}
+
+.score {
+  padding: 13px 5px;
+  text-align: center;
+  background: #10172a;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.score strong { display: block; font-size: 25px; margin-bottom: 5px; }
+.score small { color: var(--muted); font-size: 11px; }
+.score:nth-child(1) strong { color: var(--blue); }
+.score:nth-child(2) strong { color: var(--pink); }
+
+.status {
+  text-align: center;
+  font-weight: 700;
+  min-height: 24px;
+  margin-bottom: 17px;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.cell {
+  aspect-ratio: 1;
+  min-width: 0;
+  border-radius: 17px;
+  border: 1px solid var(--line);
+  background: #10172a;
+  color: white;
+  font-size: clamp(42px, 12vw, 60px);
+  font-weight: 800;
+  transition: transform .15s, background .2s;
+}
+
+.cell:not(:disabled):hover {
+  transform: translateY(-2px);
+  background: #202c48;
+  border-color: var(--blue);
+}
+
+.cell.x { color: var(--blue); }
+.cell.o { color: var(--pink); }
+
+.cell.winner {
+  background: #263d43;
+  border-color: #59d6ae;
+}
+
+.cell:disabled { cursor: default; }
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.action.primary {
+  background: var(--blue);
+  color: #fff;
+  border-color: var(--blue);
+  font-weight: 700;
+}
+
+.action:hover { filter: brightness(1.15); }
+
+footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 20px;
+}
+
+@media (max-width: 360px) {
+  .panel { padding: 15px; }
+  .board { gap: 7px; }
+  .cell { border-radius: 12px; }
+}
+</style>
+</head>
+
+<body>
+<main class="app">
+  <header>
+    <div class="logo">✦ YOUR GAME STUDIO</div>
+    <h1>X-O <span>ARENA</span></h1>
+    <div class="subtitle">Deux symboles. Un seul gagnant.</div>
+  </header>
+
+  <section class="panel">
+    <div class="modes">
+      <button class="mode active" id="computer">🤖 Contre l'IA</button>
+      <button class="mode" id="twoPlayers">👥 2 joueurs</button>
+    </div>
+
+    <div class="scoreboard">
+      <div class="score">
+        <strong id="scoreX">0</strong>
+        <small id="labelX">TOI · X</small>
+      </div>
+      <div class="score">
+        <strong id="scoreDraw">0</strong>
+        <small>NUL</small>
+      </div>
+      <div class="score">
+        <strong id="scoreO">0</strong>
+        <small id="labelO">IA · O</small>
+      </div>
+    </div>
+
+    <div class="status" id="status" aria-live="polite">
+      À toi de jouer !
+    </div>
+
+    <div class="board" id="board" aria-label="Plateau de jeu"></div>
+
+    <div class="actions">
+      <button class="action primary" id="restart">↻ Rejouer</button>
+      <button class="action" id="reset">⟲ Réinitialiser</button>
+    </div>
+  </section>
+
+  <footer>FAIT AVEC ♥ · X-O ARENA</footer>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const boardElement = $("board");
+const statusElement = $("status");
+
+let cells = Array(9).fill("");
+let current = "X";
+let active = true;
+let mode = "ai";
+let scores = { X: 0, O: 0, draw: 0 };
+
+const wins = [
+  [0,1,2], [3,4,5], [6,7,8],
+  [0,3,6], [1,4,7], [2,5,8],
+  [0,4,8], [2,4,6]
+];
+
+function winnerOf(board) {
+  for (const line of wins) {
+    const [a,b,c] = line;
+    if (board[a] && board[a] === board[b] &&
+        board[a] === board[c]) {
+      return { player: board[a], line };
+    }
+  }
+  return null;
+}
+
+function drawBoard() {
+  boardElement.innerHTML = "";
+
+  cells.forEach((value, i) => {
+    const button = document.createElement("button");
+    button.className = "cell" + (value ? " " + value.toLowerCase() : "");
+    button.textContent = value;
+    button.setAttribute("aria-label",
+      "Case " + (i + 1) + (value ? ": " + value : ": vide"));
+    button.disabled = !active || Boolean(value);
+    button.addEventListener("click", () => play(i));
+    boardElement.appendChild(button);
+  });
+}
+
+function updateScores() {
+  $("scoreX").textContent = scores.X;
+  $("scoreO").textContent = scores.O;
+  $("scoreDraw").textContent = scores.draw;
+}
+
+function finish(result) {
+  active = false;
+
+  if (result) {
+    scores[result.player]++;
+    statusElement.textContent =
+      result.player === "X"
+        ? (mode === "ai" ? "🎉 Bravo, tu as gagné !" : "🎉 Joueur X gagne !")
+        : (mode === "ai" ? "🤖 L'ordinateur gagne !" : "🎉 Joueur O gagne !");
+
+    drawBoard();
+
+    result.line.forEach(i => {
+      boardElement.children[i].classList.add("winner");
+    });
+  } else {
+    scores.draw++;
+    statusElement.textContent = "🤝 Match nul !";
+  }
+
+  updateScores();
+}
+
+function play(index) {
+  if (!active || cells[index]) return;
+
+  cells[index] = current;
+
+  const result = winnerOf(cells);
+  if (result) {
+    drawBoard();
+    finish(result);
+    return;
+  }
+
+  if (cells.every(Boolean)) {
+    drawBoard();
+    finish(null);
+    return;
+  }
+
+  current = current === "X" ? "O" : "X";
+  drawBoard();
+
+  statusElement.textContent =
+    mode === "ai" && current === "O"
+      ? "🤖 L'ordinateur réfléchit..."
+      : "Au tour du joueur " + current;
+
+  if (mode === "ai" && current === "O") {
+    active = false;
+    drawBoard();
+
+    setTimeout(() => {
+      const move = bestMove();
+      if (move !== -1) {
+        cells[move] = "O";
+      }
+
+      const result = winnerOf(cells);
+      if (result) {
+        drawBoard();
+        finish(result);
+      } else if (cells.every(Boolean)) {
+        drawBoard();
+        finish(null);
+      } else {
+        current = "X";
+        active = true;
+        drawBoard();
+        statusElement.textContent = "À toi de jouer !";
+      }
+    }, 350);
+  }
+}
+
+// IA utilisant Minimax : elle cherche le meilleur coup possible.
+function minimax(board, isMax, depth) {
+  const result = winnerOf(board);
+
+  if (result?.player === "O") return 10 - depth;
+  if (result?.player === "X") return depth - 10;
+  if (board.every(Boolean)) return 0;
+
+  let best = isMax ? -Infinity : Infinity;
+
+  for (let i = 0; i < 9; i++) {
+    if (board[i]) continue;
+
+    board[i] = isMax ? "O" : "X";
+    const value = minimax(board, !isMax, depth + 1);
+    board[i] = "";
+
+    best = isMax
+      ? Math.max(best, value)
+      : Math.min(best, value);
+  }
+
+  return best;
+}
+
+function bestMove() {
+  let bestScore = -Infinity;
+  let move = -1;
+
+  for (let i = 0; i < 9; i++) {
+    if (cells[i]) continue;
+
+    cells[i] = "O";
+    const score = minimax(cells, false, 0);
+    cells[i] = "";
+
+    if (score > bestScore) {
+      bestScore = score;
+      move = i;
+    }
+  }
+
+  return move;
+}
+
+function newGame() {
+  cells = Array(9).fill("");
+  current = "X";
+  active = true;
+  drawBoard();
+  statusElement.textContent =
+    mode === "ai" ? "À toi de jouer !" : "Au tour du joueur X";
+}
+
+$("computer").addEventListener("click", () => {
+  mode = "ai";
+  $("computer").classList.add("active");
+  $("twoPlayers").classList.remove("active");
+  $("labelX").textContent = "TOI · X";
+  $("labelO").textContent = "IA · O";
+  newGame();
+});
+
+$("twoPlayers").addEventListener("click", () => {
+  mode = "two";
+  $("twoPlayers").classList.add("active");
+  $("computer").classList.remove("active");
+  $("labelX").textContent = "JOUEUR X";
+  $("labelO").textContent = "JOUEUR O";
+  newGame();
+});
+
+$("restart").addEventListener("click", newGame);
+
+$("reset").addEventListener("click", () => {
+  scores = { X: 0, O: 0, draw: 0 };
+  updateScores();
+  newGame();
+});
+
+newGame();
+</script>
+</body>
+</html>
